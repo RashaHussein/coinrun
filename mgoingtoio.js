@@ -42,6 +42,13 @@ function success(position) {
 	};
 	map = new google.maps.Map(mapcanvas, options);
 	console.log("inside success 3");
+    
+	//Define marker's icon for the player position
+	android = new google.maps.MarkerImage(
+    'android.png',
+    null,null,null,
+    new google.maps.Size(40, 40)
+	); 
 	
 	//Put Marker for current position 
 	myPosition = new google.maps.Marker({
@@ -58,11 +65,6 @@ function success(position) {
     null, /* anchor is bottom center of the scaled image */
     new google.maps.Size(30, 40)
 	);
-	android = new google.maps.MarkerImage(
-    'android.png',
-    null,null,null,
-    new google.maps.Size(40, 40)
-	); 
 	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
 	console.log("inside success 4");
 
