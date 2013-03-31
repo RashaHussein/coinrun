@@ -5,18 +5,8 @@ var markers=[];
 var oldSouthWest;
 var oldNorthEast;
 var coin = 'coin.png';
-var diamond = new google.maps.MarkerImage(
-    'diamond.png',
-    null, /* size is determined at runtime */
-    null, /* origin is 0,0 */
-    null, /* anchor is bottom center of the scaled image */
-    new google.maps.Size(30, 40)
-); 
-var android = new google.maps.MarkerImage(
-    'android.png',
-    null,null,null,
-    new google.maps.Size(40, 40)
-); 
+var diamond;
+var android;
 var coords;
 var randLocations = []; //This will not be defined until drawCoins is called and done with it's job
 var snappedLocations = [];
@@ -61,6 +51,18 @@ function success(position) {
 		title:"Yo!"
 	});
 	directionsService = new google.maps.DirectionsService();
+	diamond = new google.maps.MarkerImage(
+    'diamond.png',
+    null, /* size is determined at runtime */
+    null, /* origin is 0,0 */
+    null, /* anchor is bottom center of the scaled image */
+    new google.maps.Size(30, 40)
+	);
+	android = new google.maps.MarkerImage(
+    'android.png',
+    null,null,null,
+    new google.maps.Size(40, 40)
+	); 
 	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
 	console.log("inside success 4");
 
