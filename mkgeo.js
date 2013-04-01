@@ -38,5 +38,6 @@ function generateRandomPoint(center, radius) {
   var xp = x/Math.cos(y0);
 
   // Resulting point.
-  return google.maps.LatLng(xp+x0, y+y0);
+  //return new google.maps.LatLng(xp+x0, y+y0);
+  return new google.maps.LatLng(y+y0, xp+x0);
 }

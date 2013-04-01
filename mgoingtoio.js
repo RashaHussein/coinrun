@@ -1,29 +1,24 @@
 //Create new div and load map there with current location marker
 var map;
-var myPosition;
-var markers=[];
-var oldSouthWest;
-var oldNorthEast;
-var coin = 'coin.png';
-var diamond;
-var android;
-var coords;
-var randLocations = []; //This will not be defined until drawCoins is called and done with it's job
-var snappedLocations = [];
-var distances = [];
-var directionsService;
+var coords; //Player's location
+var myPosition; //Player location's marker
+var android; //Icon of player's position
+var markers=[]; //Items to be acquired by player
+var diamond; //Icon of items 
+var randLocations = []; //Random location around player
+var distances = []; //Distances between player's location and items around him
 var score = 0;
 var R = 6371; // radius of earth in km
-var index = 0;
+var index = 0; //Start index of distances array
 
 //Called if geolocation is supported by browser
 function success(position) {
-	window.clearInterval(intervalId);
 	console.log("inside success");
+	
 	//Create Map Container
 	var mapcanvas = document.createElement('div');
 	mapcanvas.id = 'mapcontainer';
-	resizeElementHeight(mapcanvas);  
+	resizeElementHeight(mapcanvas);  //Full screen for map
 	document.querySelector('#container').appendChild(mapcanvas);
 
 	console.log("inside success 2");
@@ -40,16 +35,15 @@ function success(position) {
 		},
 		mapTypeId: google.maps.MapTypeId.ROADMAP
 	};
-	map = new google.maps.Map(mapcanvas, options);
-	console.log("inside success 3");
-    
+
+	//Initialize map
+	map = new google.maps.Map(mapcanvas, options); 
 	//Define marker's icon for the player position
 	android = new google.maps.MarkerImage(
     'android.png',
     null,null,null,
     new google.maps.Size(40, 40)
-	); 
-	
+	); 	
 	//Put Marker for current position 
 	myPosition = new google.maps.Marker({
 		position: coords,
@@ -57,18 +51,13 @@ function success(position) {
 		icon: android,
 		title:"Yo!"
 	});
-	directionsService = new google.maps.DirectionsService();
-	diamond = new google.maps.MarkerImage(
-    'diamond.png',
-    null, /* size is determined at runtime */
-    null, /* origin is 0,0 */
-    null, /* anchor is bottom center of the scaled image */
-    new google.maps.Size(30, 40)
-	);
-	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
-	console.log("inside success 4");
 
+	//Call drawCoins function when map is loaded
+	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
+
+	console.log("inside success 3");
 } //End of success
+
 
 //Resize Map Canvas element to full screen
 function resizeElementHeight(element) {	
@@ -82,12 +71,10 @@ function resizeElementHeight(element) {
 
 //Update current position of player
 function updateLocation(position){
-	window.clearInterval(intervalId);
 	coords = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	myPosition.setPosition(coords);
 	map.setCenter(coords);
 }//End of updateLocation
-
 
 //Convert to Radian
 function rad(x){
@@ -115,16 +102,55 @@ function closestCoin(currentPosition, snappedLocation){
 	distances[index++] = d;
 }
 
+//initialize coins on map when it's done loading
+function drawCoins(){
+	randLocations = generateRandomPoints(coords, 500, 100);
+	diamond = new google.maps.MarkerImage(
+    	'diamond.png',
+    	null, /* size is determined at runtime */
+    	null, /* origin is 0,0 */
+    	null, /* anchor is bottom center of the scaled image */
+    	new google.maps.Size(30, 40)
+	);
+	for(var i=0; i<randLocations.length;i++){
+		markers[i] = new google.maps.Marker({
+		position: randLocations[i],
+		icon: diamond,
+		map: map});
+		closestCoin(coords, randLocations[i]);	
+	}
+}
 
+
+function initUserLocation(){
+	navigator.geolocation.getCurrentPosition(success);
+  	navigator.geolocation.watchPosition(updateLocation);  // Return curret position and continues to return it as it changes
+	console.log("hayny");
+}
+
+//Check if geolocation is supported by browser
+//If yes, call success function
+if (navigator.geolocation) {
+  initUserLocation();
+  console.log("Hello World 2");
+} 
+else { console.log("Location not supported")}
+
+
+
+
+
+/*
 //Snap location to nearest street
 function snapToNearestStreet(){
-	for (var i = 0; i < 10; i++) {
+	for (var i = 0; i < randLocations.length; i++) {
    		var request = {
         	origin:randLocations[i], 
         	destination:randLocations[i],
         	travelMode: google.maps.DirectionsTravelMode.DRIVING,
         	avoidHighways:true
     	};
+
     	directionsService.route(request, function(response, status) {
       		if (status == google.maps.DirectionsStatus.OK){
           		snappedLocations[i] = response.routes[0].legs[0].start_location;
@@ -133,44 +159,11 @@ function snapToNearestStreet(){
 					position: snappedLocations[i],
 					icon: diamond,
 					map: map});
+
 				closestCoin(coords, snappedLocations[i]);
           	}
     	});
 	}
 	//Get distances betweenplayer location and all coins	
 }
-
-//initialize coins on map when it's done loading
-function drawCoins(){
-	var initialBounds = map.getBounds();
-	oldSouthWest = initialBounds.getSouthWest();
-	oldNorthEast = initialBounds.getNorthEast();
-	var lngSpan = oldNorthEast.lng() - oldSouthWest.lng();
-	var latSpan = oldNorthEast.lat() - oldSouthWest.lat();
-
-	//Generate 5 coin markers and place them on randLocations
-	for (var i = 0; i < 10; i++) {
-		randLocations[i] = new google.maps.LatLng(oldSouthWest.lat() + latSpan * Math.random(),
-		oldSouthWest.lng() + lngSpan * Math.random());
-		/*markers[i] = new google.maps.Marker({
-					position: randLocations[i],
-					map: map});*/
-	}
-	//Draw the coins on the nearest street
-	snapToNearestStreet();
-}
-
-
-//Check if geolocation is supported by browser
-//If yes, call success function
-var intervalId;
-console.log("Hello World");
-if (navigator.geolocation) {
-  console.log("Hello World 2");
-  intervalId = setInterval(function(){
-	navigator.geolocation.getCurrentPosition(success);
-  	navigator.geolocation.watchPosition(updateLocation);  // Return curret position and continues to return it as it changes
-  	console.log("hayny");
-  },1000);
-} 
-else { console.log("Location not supported")}
+*/
