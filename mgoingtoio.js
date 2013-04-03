@@ -23,8 +23,38 @@ function success(position) {
 
 	console.log("inside success 2");
 
-	//Initialize map in map Canvas
-	//Sets center to current location 
+
+	// Create an array of styles.
+  	var styles = [
+    	{
+      	stylers: [
+        	{ hue: "#00ffe6" },
+        	{ saturation: -20 },
+      	]
+    	},{
+      	featureType: "road.local",
+      	elementType: "geometry.stroke",
+      	stylers: [
+        	{ lightness: 100 },
+        	{ visibility: "on" },
+        	{ color: "#573a45" }
+      	]
+    	},{
+      	featureType: "road",
+      	elementType: "labels",
+      	stylers: [
+        	{ visibility: "on" }
+      	]
+    	}
+  	];
+
+
+  // Create a new StyledMapType object, passing it the array of styles,
+  // as well as the name to be displayed on the map type control.
+  	var styledMap = new google.maps.StyledMapType(styles,
+    	{name: "Styled Map"});
+
+	//Define center of map to be teh current player location
 	coords = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	var options = {
 		zoom: 19,
@@ -33,14 +63,22 @@ function success(position) {
 		navigationControlOptions: {
 			style: google.maps.NavigationControlStyle.SMALL
 		},
-		mapTypeId: google.maps.MapTypeId.ROADMAP
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		mapTypeControlOptions: {
+      		mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'map_style'] //to style the map
+    	}
 	};
+
 
 	//Initialize map
 	map = new google.maps.Map(mapcanvas, options); 
+	//Associate the styled map with the MapTypeId and set it to display.
+ 	map.mapTypes.set('map_style', styledMap);
+  	map.setMapTypeId('map_style');
+
 	//Define marker's icon for the player position
-	android = new google.maps.MarkerImage(
-    'android.png',
+	avatar = new google.maps.MarkerImage(
+    'avatar.png',
     null,null,null,
     new google.maps.Size(40, 40)
 	); 	
@@ -48,63 +86,27 @@ function success(position) {
 	myPosition = new google.maps.Marker({
 		position: coords,
 		map: map,
-		icon: android,
+		icon: avatar,
+		optimized: false, 
 		title:"Yo!"
 	});
+	myPosition.setMap(map);
+
+	document.getElementById('score').innerText = score;
 
 	//Call drawCoins function when map is loaded
 	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
 
+
+	//Update Location
+	autoUpdate();
+
 	console.log("inside success 3");
 } //End of success
 
-
-//Resize Map Canvas element to full screen
-function resizeElementHeight(element) {	
-	var height = 0;
-	var body = window.document.body;
-	if (window.innerHeight) {height = window.innerHeight;}
-	else if (body.parentElement.clientHeight) {height = body.parentElement.clientHeight;}
-	else if (body && body.clientHeight) {height = body.clientHeight;}
-	element.style.height = ((height - element.offsetTop) + "px");
-}//End of resizeElementHeight
-
-//Update current position of player
-function updateLocation(position){
-	coords = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-	myPosition.setPosition(coords);
-	map.setCenter(coords);
-}//End of updateLocation
-
-//Convert to Radian
-function rad(x){
-	return x*Math.PI/180;
-}
-
-//Find distance between current location and each coin and save in distance[]
-function closestCoin(currentPosition, snappedLocation){
-	var lat = currentPosition.lat();
-	var lng = currentPosition.lng();
-
-	var mlat = snappedLocation.lat();
-	var mlng = snappedLocation.lng();
-
-	var dLat  = rad(mlat - lat);
-	var dLong = rad(mlng - lng);
-
-	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(rad(lat)) * Math.cos(rad(lat)) * Math.sin(dLong/2) * Math.sin(dLong/2);
-	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-	var d = R * c;
-	console.log(d);
-
-	distances[index++] = d;
-}
-
 //initialize coins on map when it's done loading
 function drawCoins(){
-	randLocations = generateRandomPoints(coords, 500, 100);
+	randLocations = generateRandomPoints(coords, 1000, 1000);
 	diamond = new google.maps.MarkerImage(
     	'diamond.png',
     	null, /* size is determined at runtime */
@@ -117,14 +119,117 @@ function drawCoins(){
 		position: randLocations[i],
 		icon: diamond,
 		map: map});
-		closestCoin(coords, randLocations[i]);	
+		console.log(markers[i]);
 	}
+}
+
+function autoUpdate() {
+	console.log("Inside autoUpdate")
+  	navigator.geolocation.getCurrentPosition(function(position) {  
+	    var newPoint = new google.maps.LatLng(position.coords.latitude, 
+	                                          position.coords.longitude);
+
+	    if (myPosition) {
+	    	console.log("I am in if");
+	      // Marker already created - Move it
+	      myPosition.setPosition(newPoint);
+	      updateScore(newPoint);
+	    }
+	    else {
+	    	console.log("I am in else")
+	      // Marker does not exist - Create it
+	      myPosition = new google.maps.Marker({
+	        position: newPoint,
+	        optimized: false, 
+	        map: map
+	      });
+	      updateScore(newPoint);
+	    }
+
+    // Center the map on the new position
+    // map.setCenter(newPoint);
+  }); 
+
+  // Call the autoUpdate() function every 2 seconds
+  setTimeout(autoUpdate, 2000);
+}
+
+/*
+//Update current position of player
+function updateLocation(position){
+	console.log("inside updateLocation");
+	coords = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+	myPosition.setPosition(coords);
+	map.setCenter(coords);
+	updateScore(coords);
+}//End of updateLocation*/
+
+function updateScore(coords){
+	for(var i=0; i<randLocations.length; i++){
+		var dist = findDistance(coords, randLocations[i]);
+		if(dist <= 0.04){
+			score += 10;
+			removeMarker(i); //Changed Markers[i] to randLocations[i]
+		}
+		document.getElementById('score').innerText = score;
+	}
+}
+
+//Remove marker aquired
+function removeMarker(i){
+	console.log("inside removeMarker");
+	console.log(markers[i]);
+	
+	markers[i].setMap(null);
+	markers.splice(i, 1);
+	randLocations.splice(i, 1);
+	console.log(markers);
+    
+    map.setZoom(20);
+    map.setZoom(19);
+}
+
+//Find distance between current location and each coin and save in distance[]
+function findDistance(currentPosition, itemLocation){
+	var lat = currentPosition.lat();
+	var lng = currentPosition.lng();
+
+	var mlat = itemLocation.lat();
+	var mlng = itemLocation.lng();
+
+	var dLat  = rad(mlat - lat);
+	var dLong = rad(mlng - lng);
+
+	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(rad(lat)) * Math.cos(rad(lat)) * Math.sin(dLong/2) * Math.sin(dLong/2);
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+	var d = R * c;
+	console.log(d);
+
+	return d;
+	//distances[index++] = d;
+}
+
+//Resize Map Canvas element to full screen
+function resizeElementHeight(element) {	
+	var height = 0;
+	var body = window.document.body;
+	if (window.innerHeight) {height = window.innerHeight;}
+	else if (body.parentElement.clientHeight) {height = body.parentElement.clientHeight;}
+	else if (body && body.clientHeight) {height = body.clientHeight;}
+	element.style.height = ((height - element.offsetTop) + "px");
+}//End of resizeElementHeight
+
+//Convert to Radian
+function rad(x){
+	return x*Math.PI/180;
 }
 
 
 function initUserLocation(){
 	navigator.geolocation.getCurrentPosition(success);
-  	navigator.geolocation.watchPosition(updateLocation);  // Return curret position and continues to return it as it changes
+  	//navigator.geolocation.watchPosition(updateLocation);  // Return curret position and continues to return it as it changes
 	console.log("hayny");
 }
 
@@ -135,8 +240,6 @@ if (navigator.geolocation) {
   console.log("Hello World 2");
 } 
 else { console.log("Location not supported")}
-
-
 
 
 
