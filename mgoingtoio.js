@@ -10,9 +10,11 @@ var distances = []; //Distances between player's location and items around him
 var score = 0;
 var R = 6371; // radius of earth in km
 var index = 0; //Start index of distances array
+var diamondCount =0;
 
-//Called if geolocation is supported by browser
+//Called if geolocation is supported
 function success(position) {
+
 	console.log("inside success");
 	
 	//Create Map Container
@@ -92,8 +94,7 @@ function success(position) {
 	});
 	myPosition.setMap(map);
 
-	document.getElementById('score').innerText = score;
-
+	document.getElementById('scoreVal').innerText = diamondCount;
 	//Call drawCoins function when map is loaded
 	google.maps.event.addListenerOnce(map, 'idle', drawCoins);
 
@@ -106,7 +107,7 @@ function success(position) {
 
 //initialize coins on map when it's done loading
 function drawCoins(){
-	randLocations = generateRandomPoints(coords, 1000, 1000);
+	randLocations = generateRandomPoints(coords, 1000, 100);
 	diamond = new google.maps.MarkerImage(
     	'diamond.png',
     	null, /* size is determined at runtime */
@@ -126,9 +127,10 @@ function drawCoins(){
 function autoUpdate() {
 	console.log("Inside autoUpdate")
   	navigator.geolocation.getCurrentPosition(function(position) {  
+  		enableHighAccuracy: true;
+  		var accuracy = position.accuracy;
 	    var newPoint = new google.maps.LatLng(position.coords.latitude, 
 	                                          position.coords.longitude);
-
 	    if (myPosition) {
 	    	console.log("I am in if");
 	      // Marker already created - Move it
@@ -167,11 +169,31 @@ function updateLocation(position){
 function updateScore(coords){
 	for(var i=0; i<randLocations.length; i++){
 		var dist = findDistance(coords, randLocations[i]);
-		if(dist <= 0.04){
+		if(dist <= 0.02){
 			score += 10;
+			if(++diamondCount == 20) {
+				message = document.createElement('div');
+				message.className = 'startMenu';
+
+				var messageTxt = document.createElement('p');
+				messageTxt.textContent = "congratz. You reached the goal of collecting 20 diamonds. "+ "Your score is: "+ score;
+
+				
+				var contPlaying = document.createElement("button");
+				contPlaying.type = "button";
+				contPlaying.innerText = "Continue collecting diamonds";
+				contPlaying.onclick = function (){
+					message.style.display = "none";
+				}
+
+				message.appendChild(messageTxt);
+				message.appendChild(contPlaying);
+				document.querySelector('body').appendChild(message);	
+				//alert ('congratz. You collected ' + diamondCount + 'diamonds ' + 'and your score is: '+ score);
+			}
 			removeMarker(i); //Changed Markers[i] to randLocations[i]
 		}
-		document.getElementById('score').innerText = score;
+		document.getElementById('scoreVal').innerText = diamondCount;
 	}
 }
 
@@ -228,18 +250,113 @@ function rad(x){
 
 
 function initUserLocation(){
+	startMenu.style.display = "none";
+	document.getElementById('licence').style.display = "none";
+
 	navigator.geolocation.getCurrentPosition(success);
   	//navigator.geolocation.watchPosition(updateLocation);  // Return curret position and continues to return it as it changes
-	console.log("hayny");
+}
+
+function initializeUI(){
+	displayMenu();
+	initScoreUI();
+}
+
+function displayMenu(){
+	startMenu = document.createElement('div');
+	startMenu.className = 'startMenu';
+
+	var welcomeTxt = document.createElement('p');
+	welcomeTxt.textContent = "Welcome to Coin Run"
+
+	var playButton = document.createElement("button");
+	playButton.type = "button";
+	playButton.value = "Play";
+	playButton.innerText = "Start Challenge";
+	playButton.onclick = function (){
+		initUserLocation();
+	}
+
+	var howTo = document.createElement("button");
+	howTo.type = "button";
+	howTo.value = "howTo";
+	howTo.innerText = "How to Play";
+	howTo.onclick = function (){
+		welcomeTxt.style.display = "none";
+		playButton.style.display = "none";
+		howTo.style.display = "none";
+
+		var howTxt = document.createElement('p');
+		howTxt.id = "hint";
+		howTxt.textContent = "Collect at least 35 diamonds by physically going to places displayed on the map to increase your score and lose some weight ;-)"
+		startMenu.appendChild(howTxt);
+
+		var hint = document.createElement('p');
+		hint.id = "hint";
+		hint.textContent = "hint: There is a 100 diamond within a mile radius around your current location";
+		startMenu.appendChild(hint);
+
+		var mainMenu = document.createElement("button");
+		mainMenu.type = "button";
+		mainMenu.value = "mainMenu";
+		mainMenu.innerText = "Go to Main Menu";
+		mainMenu.onclick = function (){
+			howTxt.style.display = "none";
+			hint.style.display = "none";
+			mainMenu.style.display = "none";
+
+			welcomeTxt.style.display = "block";
+			playButton.style.display = "block";
+			howTo.style.display = "block";
+		}
+		startMenu.appendChild(mainMenu);
+	}
+
+	startMenu.appendChild(welcomeTxt);
+	startMenu.appendChild(playButton);
+	startMenu.appendChild(howTo);
+	document.querySelector('body').appendChild(startMenu);
+	
+
+}
+
+function initScoreUI(){
+	var scoreDiv = document.getElementById("score");
+	var newUL = document.createElement("ul");
+	scoreDiv.appendChild(newUL);
+
+	var imgElem = document.createElement("li");
+	//Create a coin image to be displayed beside score
+  	var img=document.createElement("img");
+  	img.setAttribute('src', 'coin.png');
+  	img.setAttribute('alt', 'na');
+	img.setAttribute('height', '20');
+	img.setAttribute('width', '20');
+
+	imgElem.appendChild(img);
+	newUL.appendChild(imgElem);
+
+	//Empty Space
+	var empty = document.createElement("li");
+	newUL.appendChild(empty);
+
+	//Create the area to display number of diamonds collected
+	var txtElem = document.createElement("li");	
+	txtElem.id = 'scoreVal';
+	var scoreText = document.createTextNode(diamondCount);
+
+	txtElem.appendChild(scoreText);
+	newUL.appendChild(txtElem);
 }
 
 //Check if geolocation is supported by browser
 //If yes, call success function
 if (navigator.geolocation) {
-  initUserLocation();
   console.log("Hello World 2");
 } 
-else { console.log("Location not supported")}
+else { alert("Location not supported");}
+
+
 
 
 

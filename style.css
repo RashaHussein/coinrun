@@ -5,15 +5,94 @@
 body{
 	margin:0;
 }
+
+p{
+	text-align: center;
+	font-family: comic sans ms;
+	font-weight: bold;
+	font-size: 25px;
+	margin-top: 5px;
+}
+
+li {
+	display:inline;
+	margin: 3px;
+}
+ul{
+	padding-left: 0;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
 #score{
 	position: fixed;
- 	top: 1px;
-    left: 1px;
-	width: 80px;
-	height:30px;
-	background-color: #808080;
+ 	top: 5px;
+    left: 5px;
 	z-index: 10;
+	font-size: 25px;
+}
+
+.startMenu{
+    width:300px;
+    height:300px;
+    position:absolute;
+    left:50%;
+    top:50%;
+    margin:-150px 0 0 -150px;
+    border-radius: 7px;
+    background-color: #086A87;
+    text-align: center;
+    font-size: 16px;
+    font-family: comic sans ms;
+    text-decoration: none;
+    font-weight: bold;
+   	color:#ededed;
+}
+#welcomeTxt{
+	margin:0 auto;
+	margin-top: 10px;
+}
+
+button {
+	height: 50px;
+	width: 250px;
+	margin:0 auto;
+	box-shadow:inset 0px 0px 0px -50px #ffffff;
+	background-color:#ededed;
+	border-radius:20px;
+	border:1px solid #dcdcdc;
+	color:#777777;
+	font-family:comic sans ms;
+	font-size:16px;
+	font-weight:bold;
+	text-decoration:none;
 	text-align: center;
-	font-size: 20px;
-	border-radius: 20px;
+	text-shadow:0px 0px 0px #ffffff;
+	margin-top: 20px;
+	outline: none; 
+
+}button:hover {
+	background-color:#dfdfdf;
+}
+
+button:focus { 
+ -webkit-touch-callout: none;
+ -webkit-user-select: none;
+ -khtml-user-select: none;
+ -moz-user-select: none;
+ -ms-user-select: none;
+ user-select: none;
+}
+
+#hint{
+	font-family: sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	text-align: justify;
+	margin-top: 20px;
+	margin-right: 10px;
+	margin-left: 10px;
+}
+a{
+	margin-bottom: 0;
 }
